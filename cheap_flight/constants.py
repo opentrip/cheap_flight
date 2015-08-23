@@ -1,0 +1,12 @@
+# coding: utf-8
+
+MON = 'MON'
+TUE = 'TUE'
+WED = 'WED'
+THU = 'THU'
+FRI = 'FRI'
+SAT = 'SAT'
+SUN = 'SUN'
+WEEDDAYS = [MON, TUE, WED, THU, FRI, SAT, SUN]
+WORKDAYS = [MON, TUE, WED, THU, FRI]
+WEEDENDS = [SAT, SUN]

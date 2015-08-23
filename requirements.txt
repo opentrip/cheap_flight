@@ -1,0 +1,3 @@
+requests
+libmc
+msgpack-python
