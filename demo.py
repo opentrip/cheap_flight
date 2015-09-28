@@ -11,13 +11,17 @@ available_airlines = [
     'cebupacific'
 ]
 
+
 def iter_searchers():
     for airline in available_airlines:
-        mod  = __import__(
+        mod = __import__(
             "cheap_flight.airlines.%s" % airline,
             fromlist=['Searcher']
         )
-        yield mod.Searcher()
+        if isinstance(mod.Searcher, (list, tuple)):
+            yield mod.Searcher[0]()  # TODO failover
+        else:
+            yield mod.Searcher()
 
 
 def main(argv):
