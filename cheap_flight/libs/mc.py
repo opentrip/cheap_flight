@@ -29,9 +29,8 @@ class cache(object):
             if cached is not None:
                 return msgpack.loads(cached)
             rv = fn(*args, **kwargs)
-            if rv is None:
-                raise ValueError("return value is None")
-            mc.set(key, msgpack.dumps(rv), self.expire_in)
+            if rv is not None:
+                mc.set(key, msgpack.dumps(rv), self.expire_in)
             return rv
         return _
 
