@@ -1,8 +1,9 @@
 #!./venv/bin/python
 # coding: utf-8
 import sys
-from cheap_flight.utils import iterdates
-from cheap_flight.constants import WEEDDAYS
+from cheapflight.utils import iterdates
+from cheapflight.constants import WEEDDAYS
+from cheapflight.airlines.ha import HighAvailabilitySearcher
 from datetime import datetime
 
 
@@ -15,11 +16,11 @@ available_airlines = [
 def iter_searchers():
     for airline in available_airlines:
         mod = __import__(
-            "cheap_flight.airlines.%s" % airline,
+            "cheapflight.airlines.%s" % airline,
             fromlist=['Searcher']
         )
         if isinstance(mod.Searcher, (list, tuple)):
-            yield mod.Searcher[0]()  # TODO failover
+            yield HighAvailabilitySearcher([mt() for mt in mod.Searcher])
         else:
             yield mod.Searcher()
 

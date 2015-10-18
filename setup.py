@@ -8,7 +8,7 @@ with open("requirements.txt") as fhandler:
 
 
 setup(
-    name='CheapFlight',
+    name='cheapflight',
     version='0.0.1.dev',
     url='http://github.com/mckelvin/cheap_flight/',
     license='BSD',
@@ -19,4 +19,7 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=install_requires,
+    scripts=[
+        "manage.py"
+    ]
 )

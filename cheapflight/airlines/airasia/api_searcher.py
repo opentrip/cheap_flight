@@ -4,8 +4,8 @@ import uuid
 import requests
 from decimal import Decimal
 from datetime import date
-from cheap_flight.libs.mc import cache
-from cheap_flight.utils import exchange_to_cny, get_fake_ip
+from cheapflight.libs.mc import cache
+from cheapflight.utils import exchange_to_cny, get_fake_ip
 from .schedule import FLIGHT_SCHEDULE
 
 

@@ -1,0 +1,71 @@
+---
+- hosts: all
+
+  vars:
+    timezone: 'Asia/Shanghai'
+    dbname: 'dev_cheapflight'
+    dbuser: 'dev'
+    dbpassword: 'dev'
+
+  tasks:
+    - name: "Check current timezone"
+      shell: cat /etc/timezone
+      register: current_timezone
+      changed_when: False
+
+    - name: "Set Asia/Shanghai timezone"
+      file: src=/usr/share/zoneinfo/{{ timezone }}
+            dest=/etc/localtime
+            state=link
+            force=yes
+      when: current_timezone.stdout != '{{ timezone }}'
+      become: yes
+
+    - name: "Update APT Source List"
+      copy: src="overlay/etc/apt/sources.list"
+            dest="/etc/apt/sources.list"
+      become: yes
+
+    - name: "Install Dependencies"
+      apt: pkg={{item}}
+           update_cache=yes
+           cache_valid_time=3600
+      with_items:
+        - libxslt1-dev
+        - libz-dev
+        - libxml2-dev
+        - mariadb-server-5.5
+        - memcached
+        - fabric
+        - git
+        - python-dev
+        - python-pip
+        - python-mysqldb
+        - ipython
+        - tmux
+      become: yes
+
+    - name: "Install Python Dependencies"
+      pip: requirements=/vagrant/requirements.txt
+      become: yes
+
+    - name: "Make Sure MySQL Server is Started"
+      service: name="mysql" state="started"
+      become: yes
+
+    - name: "Make Sure Memcached is Started"
+      service: name="memcached" state="started"
+      become: yes
+
+    - name: "Create Database if not existed"
+      mysql_db: name={{ dbname }} state=present
+
+    - name: "Grant user"
+      mysql_user: name={{ dbuser }}
+                  password={{ dbpassword }}
+                  priv={{ dbname }}.*:ALL
+                  state=present
+
+
+    - debug: output.stdout
+    - debug: output.stderr

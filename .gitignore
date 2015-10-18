@@ -1,6 +1,6 @@
 build/
 dist/
-venv/
+.vagrant/
 *.pyc
 *.sw[op]
 *.egg-info

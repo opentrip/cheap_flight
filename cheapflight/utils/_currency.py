@@ -1,6 +1,6 @@
 import requests
 from decimal import Decimal
-from cheap_flight.libs.mc import mc
+from cheapflight.libs.mc import mc
 
 
 def exchange_currency(from_currency, from_amount,

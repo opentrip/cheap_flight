@@ -2,9 +2,9 @@ from decimal import Decimal
 from datetime import date
 import requests
 
-from cheap_flight.libs.mc import cache
+from cheapflight.libs.mc import cache
 from pyquery import PyQuery as pq
-from cheap_flight.utils import exchange_to_cny, get_fake_ip
+from cheapflight.utils import exchange_to_cny, get_fake_ip
 from .schedule import FLIGHT_SCHEDULE
 
 

@@ -1,3 +1,9 @@
+simpleflake
 requests
 libmc
 msgpack-python
+pyquery
+Flask
+Flask-SQLAlchemy
+Flask-Script
+Flask-Migrate

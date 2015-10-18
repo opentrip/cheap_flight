@@ -3,10 +3,10 @@ import libmc
 import inspect
 import msgpack
 import functools
-from cheap_flight.config import MEMCACHED_SERVERS
+from cheapflight.config import DevelopmentConfig
 
 
-mc = libmc.Client(MEMCACHED_SERVERS)
+mc = libmc.Client(DevelopmentConfig.MEMCACHED_SERVERS)
 IGNORED_MC_RETURNS = {
     libmc.MC_RETURN_OK,
     libmc.MC_RETURN_INVALID_KEY_ERR,
