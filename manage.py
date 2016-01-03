@@ -27,7 +27,7 @@ def syncdb(destroy=False, verbose=False):
     if os.environ.get('PRODUCTION_CONFIG'):
         return
 
-    import cheapflight.models
+    import cheapflight.models.price_history
 
     db.engine.echo = bool(verbose)
     if destroy:

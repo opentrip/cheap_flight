@@ -1,28 +1,12 @@
 #!./venv/bin/python
 # coding: utf-8
 import sys
+from cheapflight import create_app
+
 from cheapflight.utils import iterdates
 from cheapflight.constants import WEEDDAYS
-from cheapflight.airlines.ha import HighAvailabilitySearcher
+from cheapflight.models.rader import fetch_and_store
 from datetime import datetime
-
-
-available_airlines = [
-    'airasia',
-    'cebupacific'
-]
-
-
-def iter_searchers():
-    for airline in available_airlines:
-        mod = __import__(
-            "cheapflight.airlines.%s" % airline,
-            fromlist=['Searcher']
-        )
-        if isinstance(mod.Searcher, (list, tuple)):
-            yield HighAvailabilitySearcher([mt() for mt in mod.Searcher])
-        else:
-            yield mod.Searcher()
 
 
 def main(argv):
@@ -36,21 +20,18 @@ def main(argv):
     end_date = datetime.strptime(argv[4], "%Y-%m-%d").date()
 
     for date_ in iterdates(begin_date, end_date):
+        price = fetch_and_store(dep, arr, date_)
 
-        for searcher in iter_searchers():
-            if (dep, arr) not in searcher.FLIGHT_SCHEDULE:
-                continue
+        if price is None:
+            continue
 
-            price = searcher.get_lowest_price(dep, arr, date_)
-
-            if price is None:
-                continue
-
-            print '%s (%s) %s-%s CNY: %d (%s)' % (
-                date_.strftime("%Y-%m-%d"), WEEDDAYS[date_.weekday()],
-                dep, arr, price, searcher.AIRLINE_NAME
-            )
+        print '%s (%s) %s-%s CNY: %d' % (
+            date_.strftime("%Y-%m-%d"), WEEDDAYS[date_.weekday()],
+            dep, arr, price,
+        )
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    app = create_app()
+    with app.app_context():
+        sys.exit(main(sys.argv))

@@ -1,3 +1,4 @@
+# coding: utf-8
 from decimal import Decimal
 from datetime import date
 import requests
@@ -81,7 +82,9 @@ class Searcher(object):
                 currency_code = currency_code_
             else:
                 assert currency_code == currency_code_
-            price_ = Decimal(price_.replace(",", ""))
+            price_ = Decimal(
+                price_.strip(u"≈ ").replace(",", "")
+            )
             if lowest_price is None or price_ < lowest_price:
                 lowest_price = price_
 

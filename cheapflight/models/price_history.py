@@ -23,20 +23,20 @@ class LowestPriceHistory(EntityModel):
     origin = Column(dbt.CHAR(3), nullable=False)
     destination = Column(dbt.CHAR(3), nullable=False)
 
-    flight_no = Column(dbt.CHAR(8), nullable=False)
+    airline = Column(dbt.CHAR(32), nullable=False)
     price_cny = Column(dbt.DECIMAL(8, 2), nullable=False)
     first_seen_at = Column(sa.BigInteger, nullable=False)
     last_seen_at = Column(sa.BigInteger, nullable=False)
 
     @classmethod
-    def add(cls, flight_date, origin, destination, flight_no, price_cny,
+    def add(cls, flight_date, origin, destination, airline, price_cny,
             first_seen_at=time.time()):
 
         payload = {
             'flight_date': flight_date,
             'origin': origin,
             'destination': destination,
-            'flight_no': flight_no,
+            'airline': airline,
             'price_cny': price_cny,
             'first_seen_at': first_seen_at,
             'last_seen_at': first_seen_at,
@@ -51,22 +51,22 @@ class LowestPriceHistory(EntityModel):
             destination=destination,
         ).order_by(
             sa.desc(cls.last_seen_at)
-        ).limit(1)
+        ).first()
 
     @classmethod
-    def update_price(cls, flight_date, origin, destination, price, flight_no):
+    def update_price(cls, flight_date, origin, destination, price, airline):
         if not isinstance(price, Decimal):
             raise ValueError("price should be of type decimal.Decimal")
 
-        existed = cls.get_latest(flight_date, origin, destination)
-        if existed is None or existed.price != price:
-            return cls.add(flight_date, origin, destination)
+        existed = cls.get_latest_price(flight_date, origin, destination)
+        if existed is None or existed.price_cny != price:
+            return cls.add(flight_date, origin, destination, airline, price)
 
         payload = {
             'last_seen_at': time.time()
         }
-        if existed.flight_no != flight_no:
-            payload['flight_no'] = flight_no
+        if existed.airline != airline:
+            payload['airline'] = airline
 
         existed.update(**payload)
         return existed.id
