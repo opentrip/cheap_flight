@@ -31,11 +31,11 @@ class Searcher(object):
     def __init__(self):
         self.http = requests.Session()
 
-    def __del__(self):
-        self.http.close()
-
-    @cache(MC_KEY_WEB_RESULT)
+    @cache(MC_KEY_WEB_RESULT, 3600 * 2)
     def search(self, dep_code, arr_code, departure_date):
+        return self.search_without_cache(dep_code, arr_code, departure_date)
+
+    def search_without_cache(self, dep_code, arr_code, departure_date):
         http_headers = self.BASE_HTTP_HEADER.copy()
         http_headers['x-forwarded-for'] = get_fake_ip()
         res = self.http.get(
@@ -67,12 +67,13 @@ class Searcher(object):
     @staticmethod
     def parse_lowest_price(html_data):
         html_dom = pq(html_data)
+        fare_dom = html_dom('div.avail-fare-price')
         price_str_list = [
             price_dom.text.strip()
-            for price_dom in html_dom('div.avail-fare-price')
+            for price_dom in fare_dom
         ]
         if not price_str_list:
-            return
+            raise ValueError(html_dom)
 
         lowest_price = None
         currency_code = None

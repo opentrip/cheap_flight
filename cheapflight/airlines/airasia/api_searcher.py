@@ -17,6 +17,7 @@ _AAE = base64.decodestring("cm9iZXJ0LmFpcmFzaWFAZ3" + "VlcnJpbGxhbWFpbC5jb20=")
 _AAP = base64.decodestring("UDRabk" + "dFS3k=")
 _SALT = base64.decodestring("ZjE1MmU5ZWZiZjZjZWY0YT" + "FlMmM0MmE2MWI2YjJjYjU=")
 _CMP = base64.decodestring("Tmd4dGNZY" + "zVIbg==")
+_DID = base64.decodestring("OTBGOEU1MkYtRjE5Qy00" + "NUZFLThFQzktREFFNTAyQTAzREFD")
 
 
 class Searcher(object):
@@ -35,9 +36,6 @@ class Searcher(object):
     def __init__(self):
         self.http = requests.Session()
         self.session = {}
-
-    def __del__(self):
-        self.http.close()
 
     @staticmethod
     def get_hash_key(dct, salt=_SALT):
@@ -253,8 +251,11 @@ class Searcher(object):
 
         return d["data"]
 
-    @cache(MC_KEY_API_RESULT)
+    @cache(MC_KEY_API_RESULT, 2 * 3600)
     def search(self, dep_code, arr_code, departure_date):
+        return self.search_without_cache(dep_code, arr_code, departure_date)
+
+    def search_without_cache(self, dep_code, arr_code, departure_date):
         login = self._action_201
         confirm1 = self._action_205
         confirm2 = self._action_204

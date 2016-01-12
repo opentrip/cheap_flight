@@ -12,9 +12,9 @@ from cheapflight.models.base import EntityModel
 
 class LowestPriceHistory(EntityModel):
     '''
-    xx(a)n(n)(n)(n)(a)
+    CZ3997:xx(a)n(n)(n)(n)(a)
         https://en.wikipedia.org/wiki/Airline_codes
-    aaa
+    PEK:aaa
         https://en.wikipedia.org/wiki/International_Air_Transport_Association_airport_code
     '''
 
