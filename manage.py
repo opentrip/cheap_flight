@@ -9,7 +9,7 @@ from cheapflight import create_app
 from cheapflight.ext import db
 
 # import for migrating
-import cheapflight.models.price_history
+import cheapflight.models
 
 app = create_app()
 manager = Manager(app)
