@@ -1,4 +1,5 @@
 FLIGHT_SCHEDULE = [
+    ('DMK', 'PVG'),
     ('KUL', 'CCU'),
     ('KUL', 'BDO'),
     ('KUL', 'PDG'),
@@ -468,6 +469,7 @@ FLIGHT_SCHEDULE = [
     ('COK', 'KUL'),
     ('BTJ', 'KUL'),
     ('CRK', 'KUL'),
+    ('PVG', 'DMK'),
     ('PVG', 'KUL'),
     ('LGK', 'KUL'),
     ('DMK', 'KUL'),
