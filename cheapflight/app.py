@@ -10,6 +10,7 @@ __all__ = ['create_app']
 
 blueprints = [
     'home',
+    'api',
 ]
 
 

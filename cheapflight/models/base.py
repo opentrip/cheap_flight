@@ -4,6 +4,7 @@ import datetime
 
 from simpleflake import simpleflake, parse_simpleflake
 from werkzeug.utils import cached_property
+import sqlalchemy
 from sqlalchemy import Column, BigInteger
 from sqlalchemy.inspection import inspect
 from sqlalchemy.ext.declarative import declared_attr
@@ -51,8 +52,12 @@ class EntityModel(db.Model):
     def add(cls, **data):
         obj = cls(**data)
         db.session.add(obj)
-        db.session.commit()
-        return obj.id
+        try:
+            db.session.commit()
+            return obj.id
+        except sqlalchemy.exc.IntegrityError:
+            db.session.rollback()
+            return None
 
     def update(self, **data):
         data.pop('id', None)
@@ -63,4 +68,4 @@ class EntityModel(db.Model):
 
     @classmethod
     def delete(cls, id_):
-        return cls.__class__.query.filter_by(id=id_).delete()
+        return cls.query.filter_by(id=id_).delete()

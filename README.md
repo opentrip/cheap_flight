@@ -47,3 +47,4 @@ $ python demo.py MNL PEK 2015-10-27 2015-11-05
 - Malindo Air
 - Lion Air
 - Tigerair
+- outbound+return ticket

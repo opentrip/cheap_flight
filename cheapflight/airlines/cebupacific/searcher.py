@@ -31,7 +31,7 @@ class Searcher(object):
     def __del__(self):
         self.http.close()
 
-    @cache("price:cebu_pacific:{dep_code}:{arr_code}:{departure_date}")
+    @cache("price:cebu_pacific:{dep_code}:{arr_code}:{departure_date}", 60)
     def search(self, dep_code, arr_code, departure_date):
         res = self.http.get(
             self.BASE_URL,

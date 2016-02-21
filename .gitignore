@@ -4,4 +4,6 @@ dist/
 *.pyc
 *.sw[op]
 *.egg-info
-permdirs/
+.DS_Store
+.tmp_permdirs/*.sqlite
+venv/

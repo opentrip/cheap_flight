@@ -10,7 +10,7 @@ from .schedule import FLIGHT_SCHEDULE
 
 
 MC_KEY_WEB_RESULT = ("airasia:web_result:{dep_code}:{arr_code}:"
-                     "{departure_date}")
+                     "{departure_date}:{return_date}")
 
 
 class Searcher(object):
@@ -31,28 +31,35 @@ class Searcher(object):
     def __init__(self):
         self.http = requests.Session()
 
-    @cache(MC_KEY_WEB_RESULT, 3600 * 2)
-    def search(self, dep_code, arr_code, departure_date):
-        return self.search_without_cache(dep_code, arr_code, departure_date)
+    @cache(MC_KEY_WEB_RESULT, 60)
+    def search(self, dep_code, arr_code, departure_date, return_date=None):
+        return self.search_without_cache(dep_code, arr_code, departure_date,
+                                         return_date)
 
-    def search_without_cache(self, dep_code, arr_code, departure_date):
+    def search_without_cache(self, dep_code, arr_code, departure_date,
+                             return_date=None):
         http_headers = self.BASE_HTTP_HEADER.copy()
         http_headers['x-forwarded-for'] = get_fake_ip()
+        dd1_str = departure_date.strftime("%Y-%m-%d")
+        params = {
+            'o1': dep_code,
+            'd1': arr_code,
+            'dd1': dd1_str,
+            'ADT': 1,
+            'CHD': 0,
+            'inl': 0,
+            's': True,
+            'mon': True,
+            'loy': True,
+            'cc': 'CNY',
+        }
+        if return_date is not None:
+            params["dd2"] = return_date.strftime("%Y-%m-%d")
+
         res = self.http.get(
             self.BASE_URL,
             headers=http_headers,
-            params={
-                'o1': dep_code,
-                'd1': arr_code,
-                'dd1': departure_date.strftime("%Y-%m-%d"),
-                'ADT': 1,
-                'CHD': 0,
-                'inl': 0,
-                's': True,
-                'mon': True,
-                'loy': True,
-                'cc': 'CNY',
-            }
+            params=params
         )
         if res.status_code == 200:
             return res.text
@@ -99,8 +106,8 @@ class Searcher(object):
         return lowest_price_in_cny
 
     def get_lowest_price(self, dep_code='PEK', arr_code='KUL',
-                         departure_date=date(2016, 5, 2)):
-        data = self.search(dep_code, arr_code, departure_date)
+                         departure_date=date(2016, 5, 2), return_date=None):
+        data = self.search(dep_code, arr_code, departure_date, return_date)
         return self.parse_lowest_price(data)
 
 

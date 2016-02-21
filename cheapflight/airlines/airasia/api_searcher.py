@@ -5,19 +5,21 @@ import base64
 import hashlib
 import requests
 from decimal import Decimal
-from datetime import date, datetime, timedelta
+from datetime import date
 from cheapflight.libs.mc import cache
 from cheapflight.utils import get_fake_ip
 from cheapflight.airlines.airasia.schedule import FLIGHT_SCHEDULE
 
 
 MC_KEY_API_RESULT = ("airasia:api_result:{dep_code}:{arr_code}:"
-                     "{departure_date}")
+                     "{departure_date}:{return_date}")
 _AAE = base64.decodestring("cm9iZXJ0LmFpcmFzaWFAZ3" + "VlcnJpbGxhbWFpbC5jb20=")
 _AAP = base64.decodestring("UDRabk" + "dFS3k=")
-_SALT = base64.decodestring("ZjE1MmU5ZWZiZjZjZWY0YT" + "FlMmM0MmE2MWI2YjJjYjU=")
+_SALT = base64.decodestring("ZjE1MmU5ZWZiZjZjZWY0YT"
+                            "FlMmM0MmE2MWI2YjJjYjU=")
 _CMP = base64.decodestring("Tmd4dGNZY" + "zVIbg==")
-_DID = base64.decodestring("OTBGOEU1MkYtRjE5Qy00" + "NUZFLThFQzktREFFNTAyQTAzREFD")
+_DID = base64.decodestring("OTBGOEU1MkYtRjE5Qy00"
+                           "NUZFLThFQzktREFFNTAyQTAzREFD")
 
 
 class Searcher(object):
@@ -202,8 +204,15 @@ class Searcher(object):
 
         self.session["user_session"] = str(d["data"]["userSession"])
 
-    def _action_302(self, dep_code="PEK", arr_code="KUL", departure_date=date(2016, 5, 2), ):
+    def _action_302(self, dep_code="PEK", arr_code="KUL",
+                    departure_date=date(2016, 5, 2), return_date=None):
         ''' query '''
+        departure_date_str = departure_date.strftime("%Y-%m-%d")
+        if return_date is None:
+            return_date_str = ""
+        else:
+            return_date_str = return_date.strftime("%Y-%m-%d")
+
         query_params = {
             "MCC": "460",
             "MNC": "01",
@@ -214,7 +223,7 @@ class Searcher(object):
             "childPax": "0",
             "countryCode": "CN",
             "cultureCode": "en-GB",
-            "departureDate": departure_date.strftime("%Y-%m-%d"),
+            "departureDate": departure_date_str,
             "departureStation": dep_code,
             "deviceBrand": "apple",
             "deviceID": self.DEVICE_ID,
@@ -224,7 +233,7 @@ class Searcher(object):
             "osVersion": "9.2",
             "password": _CMP,
             "requestFrom": "0",
-            "returnDate": "",
+            "returnDate": return_date_str,
             "userCurrencyCode": "CNY",
             "userEmail": self.session["useremail"],
             "userSession": self.session["user_session"],
@@ -251,11 +260,13 @@ class Searcher(object):
 
         return d["data"]
 
-    @cache(MC_KEY_API_RESULT, 2 * 3600)
-    def search(self, dep_code, arr_code, departure_date):
-        return self.search_without_cache(dep_code, arr_code, departure_date)
+    @cache(MC_KEY_API_RESULT, 60)
+    def search(self, dep_code, arr_code, departure_date, return_date):
+        return self.search_without_cache(dep_code, arr_code, departure_date,
+                                         return_date)
 
-    def search_without_cache(self, dep_code, arr_code, departure_date):
+    def search_without_cache(self, dep_code, arr_code, departure_date,
+                             return_date):
         login = self._action_201
         confirm1 = self._action_205
         confirm2 = self._action_204
@@ -269,7 +280,7 @@ class Searcher(object):
             confirm2()
 
         get_session()
-        return query(dep_code, arr_code, departure_date)
+        return query(dep_code, arr_code, departure_date, return_date)
 
     @staticmethod
     def parse_lowest_price(json_data, departure_date):
@@ -286,6 +297,8 @@ class Searcher(object):
         return lowest_price_in_cny
 
     def get_lowest_price(self, dep_code="PEK", arr_code="KUL",
-                         departure_date=date(2016, 5, 2)):
-        json_data = self.search(dep_code, arr_code, departure_date)
+                         departure_date=date(2016, 5, 2),
+                         return_date=None):
+        json_data = self.search(dep_code, arr_code, departure_date,
+                                return_date)
         return self.parse_lowest_price(json_data, departure_date)

@@ -1,13 +1,14 @@
 # coding: utf-8
 import time
+from datetime import datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
 from sqlalchemy import Column
 import sqlalchemy.types as dbt
-from sqlalchemy.orm.exc import NoResultFound
 
 from cheapflight.models.base import EntityModel
+from cheapflight.models.notify import on_price_change
 
 
 class LowestPriceHistory(EntityModel):
@@ -43,6 +44,17 @@ class LowestPriceHistory(EntityModel):
         }
         return super(LowestPriceHistory, cls).add(**payload)
 
+    def to_dict(self):
+        return {
+            'flight_date': self.flight_date.strftime("%Y-%m-%d"),
+            'origin': self.origin,
+            'destination': self.destination,
+            'airline': self.airline,
+            'price_cny': float(self.price_cny),
+            'first_seen_at': datetime.fromtimestamp(self.first_seen_at),
+            'last_seen_at': datetime.fromtimestamp(self.first_seen_at),
+        }
+
     @classmethod
     def get_latest_price(cls, flight_date, origin, destination):
         return cls.query.filter_by(
@@ -54,16 +66,59 @@ class LowestPriceHistory(EntityModel):
         ).first()
 
     @classmethod
-    def update_price(cls, flight_date, origin, destination, price, airline):
+    def list(cls):
+        price_dict = {}
+        for rec in cls.query.all():
+            price_dict.setdefault(
+                (rec.flight_date, rec.origin, rec.destination),
+                []
+            ).append(
+                (rec.id, rec.airline, rec.first_seen_at, rec.last_seen_at,
+                 rec.price_cny)
+            )
+
+        price_list = []
+        for unique_record, history in price_dict.iteritems():
+            flight_date, origin, destination = unique_record
+            price_list.append({
+                'flight_date': flight_date.strftime("%Y-%m-%d"),
+                'origin': origin,
+                'destination': destination,
+                'priceline': [
+                    {
+                        'id': str(id_),
+                        'airline': airline,
+                        'price_cny': float(price_cny),
+                        'first_seen_at': datetime.fromtimestamp(first_seen_at).strftime("%Y-%m-%d %H:%M:%S"),
+                        'last_seen_at': datetime.fromtimestamp(last_seen_at).strftime("%Y-%m-%d %H:%M:%S"),
+                    }
+                    for (id_, airline, first_seen_at, last_seen_at, price_cny)
+                    in sorted(history, key=lambda x: x[3])
+                ],
+            })
+        return price_list
+
+    @classmethod
+    def update_price(cls, flight_date, origin, destination, price, airline,
+                     now_ts=time.time()):
         if not isinstance(price, Decimal):
             raise ValueError("price should be of type decimal.Decimal")
 
         existed = cls.get_latest_price(flight_date, origin, destination)
-        if existed is None or existed.price_cny != price:
-            return cls.add(flight_date, origin, destination, airline, price)
+        if existed is None:
+            return cls.add(
+                flight_date, origin, destination, airline, price, now_ts
+            )
+
+        if abs(existed.price_cny - price) > 0.01:
+            on_price_change(flight_date, origin, destination,
+                            airline, price, now_ts, existed)
+            return cls.add(
+                flight_date, origin, destination, airline, price, now_ts
+            )
 
         payload = {
-            'last_seen_at': time.time()
+            'last_seen_at': now_ts
         }
         if existed.airline != airline:
             payload['airline'] = airline
