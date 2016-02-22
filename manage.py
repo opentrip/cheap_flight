@@ -6,7 +6,7 @@ from flask.ext.script import Manager
 from flask.ext.script.commands import Clean
 from flask.ext.migrate import MigrateCommand, Migrate
 
-from cheapflight import create_app
+from cheapflight.app import create_app
 from cheapflight.ext import db
 
 # import for migrating
