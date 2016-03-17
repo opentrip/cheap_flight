@@ -1,12 +1,14 @@
 # coding: utf-8
+import lxml
+import lxml.cssselect
+import html5lib
 from decimal import Decimal
 from datetime import date
 import requests
 
 from cheapflight.libs.mc import cache
-from pyquery import PyQuery as pq
+
 from cheapflight.utils import exchange_to_cny, get_fake_ip
-from .schedule import FLIGHT_SCHEDULE
 
 
 MC_KEY_WEB_RESULT = ("airasia:web_result:{dep_code}:{arr_code}:"
@@ -26,7 +28,6 @@ class Searcher(object):
                        'Chrome/45.0.2454.93 Safari/537.36'),
     }
     AIRLINE_NAME = 'AirAsia'
-    FLIGHT_SCHEDULE = set(FLIGHT_SCHEDULE)
 
     def __init__(self):
         self.http = requests.Session()
@@ -73,37 +74,48 @@ class Searcher(object):
 
     @staticmethod
     def parse_lowest_price(html_data):
-        html_dom = pq(html_data)
-        fare_dom = html_dom('div.avail-fare-price')
-        price_str_list = [
-            price_dom.text.strip()
-            for price_dom in fare_dom
-        ]
-        if not price_str_list:
-            raise ValueError(html_dom)
+        htmlparser = html5lib.HTMLParser(
+            tree=html5lib.treebuilders.getTreeBuilder("lxml"),
+            namespaceHTMLElements=False
+        )
 
-        lowest_price = None
-        currency_code = None
-        for price_str in price_str_list:
-            price_, currency_code_ = price_str.split(" ")
-            if currency_code is None:
-                currency_code = currency_code_
+        page = htmlparser.parse(html_data)
+
+        table_selector = lxml.cssselect.CSSSelector("table.avail-table")
+        fare_selector = lxml.cssselect.CSSSelector("div.avail-fare-price")
+        total_price = Decimal(0)
+        for table in table_selector(page):
+            price_str_list = [
+                fare.text.strip()
+                for fare in fare_selector(table)
+            ]
+
+            if not price_str_list:
+                raise ValueError(html_data)
+
+            lowest_price = None
+            currency_code = None
+            for price_str in price_str_list:
+                price_, currency_code_ = price_str.split(" ")
+                if currency_code is None:
+                    currency_code = currency_code_
+                else:
+                    assert currency_code == currency_code_
+                price_ = Decimal(
+                    price_.strip(u"≈ ").replace(",", "")
+                )
+                if lowest_price is None or price_ < lowest_price:
+                    lowest_price = price_
+
+            assert currency_code is not None
+
+            if currency_code != 'CNY':
+                lowest_price_in_cny = exchange_to_cny(currency_code, lowest_price)
             else:
-                assert currency_code == currency_code_
-            price_ = Decimal(
-                price_.strip(u"≈ ").replace(",", "")
-            )
-            if lowest_price is None or price_ < lowest_price:
-                lowest_price = price_
+                lowest_price_in_cny = lowest_price
 
-        assert currency_code is not None
-
-        if currency_code != 'CNY':
-            lowest_price_in_cny = exchange_to_cny(currency_code, lowest_price)
-        else:
-            lowest_price_in_cny = lowest_price
-
-        return lowest_price_in_cny
+            total_price += lowest_price_in_cny
+        return total_price
 
     def get_lowest_price(self, dep_code='PEK', arr_code='KUL',
                          departure_date=date(2016, 5, 2), return_date=None):

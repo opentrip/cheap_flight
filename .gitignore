@@ -1,6 +1,7 @@
 build/
 dist/
 .vagrant/
+.cache/
 *.pyc
 *.sw[op]
 *.egg-info
