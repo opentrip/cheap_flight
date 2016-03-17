@@ -8,7 +8,6 @@ from decimal import Decimal
 from datetime import date
 from cheapflight.libs.mc import cache
 from cheapflight.utils import get_fake_ip
-from cheapflight.airlines.airasia.schedule import FLIGHT_SCHEDULE
 
 
 MC_KEY_API_RESULT = ("airasia:api_result:{dep_code}:{arr_code}:"
@@ -32,7 +31,6 @@ class Searcher(object):
         "authorization": "Basic Og=="
     }
     AIRLINE_NAME = "Air" + "Asia"
-    FLIGHT_SCHEDULE = set(FLIGHT_SCHEDULE)
     DEVICE_ID = str(uuid.uuid4()).upper()
 
     def __init__(self):
@@ -261,12 +259,12 @@ class Searcher(object):
         return d["data"]
 
     @cache(MC_KEY_API_RESULT, 60)
-    def search(self, dep_code, arr_code, departure_date, return_date):
+    def search(self, dep_code, arr_code, departure_date, return_date=None):
         return self.search_without_cache(dep_code, arr_code, departure_date,
                                          return_date)
 
     def search_without_cache(self, dep_code, arr_code, departure_date,
-                             return_date):
+                             return_date=None):
         login = self._action_201
         confirm1 = self._action_205
         confirm2 = self._action_204
@@ -283,12 +281,23 @@ class Searcher(object):
         return query(dep_code, arr_code, departure_date, return_date)
 
     @staticmethod
-    def parse_lowest_price(json_data, departure_date):
-        date_key = departure_date.strftime("%Y-%m-%d")
-        low_fare_dict = json_data["LowestFareArr"][0]
-        currency_code = str(json_data["departureCurrencyCode"])
-        exchange_rate = Decimal(json_data["exchangeRate"])
-        lowest_price = Decimal(low_fare_dict[date_key])
+    def parse_lowest_price(json_data, departure_date, return_date):
+        outbound_date = departure_date.strftime("%Y-%m-%d")
+        lowest_fare_arr = json_data["LowestFareArr"]
+        if return_date is None:
+            assert len(lowest_fare_arr) == 0
+        else:
+            return_date = return_date.strftime("%Y-%m-%d")
+            assert len(lowest_fare_arr) == 1
+
+        lowest_price = Decimal(0)
+        for date_key, low_fare_dict in zip(
+            [outbound_date, return_date], lowest_fare_arr
+        ):
+            currency_code = str(json_data["departureCurrencyCode"])
+            exchange_rate = Decimal(json_data["exchangeRate"])
+            lowest_price += Decimal(low_fare_dict[date_key])
+
         if currency_code != "CNY":
             lowest_price_in_cny = exchange_rate * lowest_price
         else:
@@ -301,4 +310,6 @@ class Searcher(object):
                          return_date=None):
         json_data = self.search(dep_code, arr_code, departure_date,
                                 return_date)
-        return self.parse_lowest_price(json_data, departure_date)
+        return self.parse_lowest_price(
+            json_data, departure_date, return_date
+        )

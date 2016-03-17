@@ -8,3 +8,4 @@ Flask-SQLAlchemy
 Flask-Script
 Flask-Migrate
 Flask-Testing
+html5lib
